@@ -142,7 +142,7 @@ func TestVoicesReturnsTokenFilteredCatalog(t *testing.T) {
 		t.Fatalf("expected status 200, got %d body=%s", rec.Code, rec.Body.String())
 	}
 
-	want := `[{"id":"zh-CN-XiaoxiaoNeural","locale":"zh-CN","gender":"Female","default":true},{"id":"zh-CN-YunxiNeural","locale":"zh-CN","gender":"Male","default":false}]`
+	want := `{"default_voice":"zh-CN-XiaoxiaoNeural","voices":[{"short_name":"zh-CN-XiaoxiaoNeural","locale":"zh-CN","gender":"Female"},{"short_name":"zh-CN-YunxiNeural","locale":"zh-CN","gender":"Male"}]}`
 	if got := strings.TrimSpace(rec.Body.String()); got != want {
 		t.Fatalf("unexpected body %s", got)
 	}

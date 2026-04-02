@@ -1,14 +1,16 @@
 package httpapi
 
-import (
-	"net/http"
-)
+import "net/http"
 
-type voiceResponse struct {
-	ID      string `json:"id"`
-	Locale  string `json:"locale,omitempty"`
-	Gender  string `json:"gender,omitempty"`
-	Default bool   `json:"default"`
+type voicesResponse struct {
+	DefaultVoice string        `json:"default_voice"`
+	Voices       []voiceRecord `json:"voices"`
+}
+
+type voiceRecord struct {
+	ShortName string `json:"short_name"`
+	Locale    string `json:"locale"`
+	Gender    string `json:"gender"`
 }
 
 func (a *App) handleVoices(w http.ResponseWriter, r *http.Request) {
@@ -28,28 +30,21 @@ func (a *App) handleVoices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filtered := make([]voiceResponse, 0, len(token.AllowedVoices))
-	seen := make(map[string]struct{}, len(token.AllowedVoices))
+	filtered := make([]voiceRecord, 0, len(token.AllowedVoices))
 	for _, voice := range voices {
 		if !containsVoice(token.AllowedVoices, voice.ShortName) {
 			continue
 		}
 
-		filtered = append(filtered, voiceResponse{
-			ID:      voice.ShortName,
-			Locale:  voice.Locale,
-			Gender:  voice.Gender,
-			Default: voice.ShortName == token.Defaults.Voice,
-		})
-		seen[voice.ShortName] = struct{}{}
-	}
-
-	if _, ok := seen[token.Defaults.Voice]; !ok {
-		filtered = append(filtered, voiceResponse{
-			ID:      token.Defaults.Voice,
-			Default: true,
+		filtered = append(filtered, voiceRecord{
+			ShortName: voice.ShortName,
+			Locale:    voice.Locale,
+			Gender:    voice.Gender,
 		})
 	}
 
-	writeJSON(w, http.StatusOK, filtered)
+	writeJSON(w, http.StatusOK, voicesResponse{
+		DefaultVoice: token.Defaults.Voice,
+		Voices:       filtered,
+	})
 }

@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -22,22 +22,20 @@ func main() {
 }
 
 func run() int {
-	configPath := flag.String("config", "gateway.yaml", "Path to gateway config file")
-	flag.Parse()
-
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	configPath := loadConfigPath()
 
-	store, err := config.NewStore(*configPath)
+	store, err := config.NewStore(configPath)
 	if err != nil {
-		logger.Error("load config", "error", err, "path", *configPath)
+		logger.Error("load config", "error", err, "path", configPath)
 		return 1
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := config.Watch(ctx, logger, store, *configPath); err != nil {
-		logger.Error("watch config", "error", err, "path", *configPath)
+	if err := config.Watch(ctx, logger, store, configPath); err != nil {
+		logger.Error("watch config", "error", err, "path", configPath)
 		return 1
 	}
 
@@ -69,4 +67,12 @@ func run() int {
 	}
 
 	return 0
+}
+
+func loadConfigPath() string {
+	if value := strings.TrimSpace(os.Getenv("CONFIG_PATH")); value != "" {
+		return value
+	}
+
+	return "/app/config/gateway.yaml"
 }
