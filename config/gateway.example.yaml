@@ -13,7 +13,7 @@ defaults:
 tokens:
   - name: llm-prod
     token: sk_tts_prod_xxx
-    enabled: true
+    enabled: false
     defaults:
       voice: zh-CN-XiaoxiaoNeural
       thread: 1
