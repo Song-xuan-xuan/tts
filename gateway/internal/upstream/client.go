@@ -26,12 +26,10 @@ func New(baseURL string, timeoutSeconds int) *Client {
 }
 
 func (c *Client) ListVoices(ctx context.Context) ([]Voice, error) {
-	endpoint, err := url.Parse(c.baseURL)
+	endpoint, err := c.endpoint("/api/tts/list")
 	if err != nil {
-		return nil, fmt.Errorf("parse upstream url: %w", err)
+		return nil, err
 	}
-	endpoint.Path = path.Join(endpoint.Path, "/api/tts/list")
-
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("build voices request: %w", err)
@@ -56,12 +54,10 @@ func (c *Client) ListVoices(ctx context.Context) ([]Voice, error) {
 }
 
 func (c *Client) Synthesize(ctx context.Context, params SynthesizeParams) (*http.Response, error) {
-	endpoint, err := url.Parse(c.baseURL)
+	endpoint, err := c.endpoint("/api/tts")
 	if err != nil {
-		return nil, fmt.Errorf("parse upstream url: %w", err)
+		return nil, err
 	}
-	endpoint.Path = path.Join(endpoint.Path, "/api/tts")
-
 	values := endpoint.Query()
 	values.Set("text", params.Text)
 	values.Set("voiceName", params.Voice)
@@ -80,4 +76,22 @@ func (c *Client) Synthesize(ctx context.Context, params SynthesizeParams) (*http
 	}
 
 	return resp, nil
+}
+
+func (c *Client) endpoint(route string) (*url.URL, error) {
+	endpoint, err := url.Parse(c.baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("parse upstream url: %w", err)
+	}
+
+	endpoint.Path = joinURLPath(endpoint.Path, route)
+	if endpoint.RawPath != "" {
+		endpoint.RawPath = joinURLPath(endpoint.RawPath, route)
+	}
+
+	return endpoint, nil
+}
+
+func joinURLPath(basePath, route string) string {
+	return path.Join("/"+basePath, route)
 }

@@ -10,7 +10,7 @@ import (
 
 func TestListVoicesLoadsCatalog(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/tts/list" {
+		if r.URL.Path != "/prefix/api/tts/list" {
 			t.Fatalf("unexpected path %s", r.URL.Path)
 		}
 		_, _ = w.Write([]byte(`[
@@ -20,7 +20,7 @@ func TestListVoicesLoadsCatalog(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := New(server.URL, 5)
+	client := New(server.URL+"/prefix", 5)
 	voices, err := client.ListVoices(context.Background())
 	if err != nil {
 		t.Fatalf("list voices: %v", err)
@@ -29,10 +29,26 @@ func TestListVoicesLoadsCatalog(t *testing.T) {
 	if len(voices) != 2 {
 		t.Fatalf("expected 2 voices, got %d", len(voices))
 	}
+
+	if voices[0].ShortName != "zh-CN-XiaoxiaoNeural" {
+		t.Fatalf("unexpected short name %q", voices[0].ShortName)
+	}
+
+	if voices[0].Locale != "zh-CN" {
+		t.Fatalf("unexpected locale %q", voices[0].Locale)
+	}
+
+	if voices[0].Gender != "Female" {
+		t.Fatalf("unexpected gender %q", voices[0].Gender)
+	}
 }
 
 func TestSynthesizeBuildsExpectedQuery(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/prefix/api/tts" {
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+
 		values := r.URL.Query()
 		if values.Get("text") != "hello world" {
 			t.Fatalf("unexpected text: %q", values.Get("text"))
@@ -51,7 +67,7 @@ func TestSynthesizeBuildsExpectedQuery(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := New(server.URL, 5)
+	client := New(server.URL+"/prefix", 5)
 	resp, err := client.Synthesize(context.Background(), SynthesizeParams{
 		Text:        "hello world",
 		Voice:       "zh-CN-XiaoxiaoNeural",
@@ -71,4 +87,27 @@ func TestSynthesizeBuildsExpectedQuery(t *testing.T) {
 	if string(body) != "mp3-bytes" {
 		t.Fatalf("unexpected body %q", body)
 	}
+}
+
+func TestSynthesizePreservesEscapedBasePathPrefix(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.EscapedPath() != "/prefix%2Ftenant/api/tts" {
+			t.Fatalf("unexpected escaped path %s", r.URL.EscapedPath())
+		}
+		w.Header().Set("Content-Type", "audio/mp3")
+		_, _ = w.Write([]byte("mp3-bytes"))
+	}))
+	defer server.Close()
+
+	client := New(server.URL+"/prefix%2Ftenant", 5)
+	resp, err := client.Synthesize(context.Background(), SynthesizeParams{
+		Text:        "hello world",
+		Voice:       "zh-CN-XiaoxiaoNeural",
+		Thread:      1,
+		ShardLength: 400,
+	})
+	if err != nil {
+		t.Fatalf("synthesize: %v", err)
+	}
+	defer resp.Body.Close()
 }
