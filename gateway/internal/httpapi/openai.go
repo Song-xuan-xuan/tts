@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"unicode/utf8"
 
@@ -31,7 +32,9 @@ func (a *App) handleSpeech(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_request_error", "invalid_json", "request body must be valid JSON")
 		return
 	}
-	if decoder.More() {
+
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
 		writeError(w, http.StatusBadRequest, "invalid_request_error", "invalid_json", "request body must be valid JSON")
 		return
 	}
