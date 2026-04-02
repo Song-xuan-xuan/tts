@@ -1,1 +1,5 @@
-.worktrees/
+.env
+config/gateway.yaml
+backup/
+gateway/bin/
+gateway/.cache/
