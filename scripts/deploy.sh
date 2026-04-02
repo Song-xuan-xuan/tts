@@ -27,9 +27,9 @@ if [[ "${server_port}" != "8080" ]]; then
 fi
 
 awk '
-  /^[[:space:]]*token:[[:space:]]*/ {
+  /^[[:space:]]*-?[[:space:]]*token:[[:space:]]*/ {
     token = $0
-    sub(/^[[:space:]]*token:[[:space:]]*/, "", token)
+    sub(/^[[:space:]]*-?[[:space:]]*token:[[:space:]]*/, "", token)
     sub(/[[:space:]]*(#.*)?$/, "", token)
     gsub(/^["\047]|["\047]$/, "", token)
 
