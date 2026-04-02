@@ -1,0 +1,36 @@
+services:
+  tts-gateway:
+    image: ${TTS_GATEWAY_IMAGE}
+    container_name: tts-gateway
+    restart: unless-stopped
+    ports:
+      - "${TTS_GATEWAY_PORT}:8080"
+    environment:
+      CONFIG_PATH: /app/config/gateway.yaml
+    volumes:
+      - ./config/gateway.yaml:/app/config/gateway.yaml:ro
+    depends_on:
+      - tts
+    networks:
+      - tts-net
+
+  tts:
+    image: ${UPSTREAM_TTS_IMAGE}
+    container_name: tts-upstream
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      MONITOR_TOKEN: ${UPSTREAM_MONITOR_TOKEN}
+      DEFAULT_VOICE_NAME: zh-CN-XiaoxiaoNeural
+      DEFAULT_AUDIO_FORMAT: audio-24khz-48kbitrate-mono-mp3
+      DEFAULT_SSML_RATE: "0"
+      DEFAULT_SSML_PITCH: "0"
+      WEB_TEXT_LENGTH_LIMIT: "20000"
+    expose:
+      - "8080"
+    networks:
+      - tts-net
+
+networks:
+  tts-net:
+    driver: bridge

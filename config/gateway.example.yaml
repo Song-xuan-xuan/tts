@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+upstream:
+  base_url: http://tts:8080
+  timeout_seconds: 90
+
+defaults:
+  thread: 1
+  shard_length: 400
+  max_text_length: 8000
+
+tokens:
+  - name: llm-prod
+    token: sk_tts_prod_xxx
+    enabled: true
+    defaults:
+      voice: zh-CN-XiaoxiaoNeural
+      thread: 1
+      shard_length: 400
+      max_text_length: 8000
+    allowed_voices:
+      - zh-CN-XiaoxiaoNeural
+      - zh-CN-YunxiNeural
