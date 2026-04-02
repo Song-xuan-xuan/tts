@@ -25,7 +25,13 @@ func (a *App) handleSpeech(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req speechRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request_error", "invalid_json", "request body must be valid JSON")
+		return
+	}
+	if decoder.More() {
 		writeError(w, http.StatusBadRequest, "invalid_request_error", "invalid_json", "request body must be valid JSON")
 		return
 	}

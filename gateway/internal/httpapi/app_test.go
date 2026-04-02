@@ -166,6 +166,33 @@ func TestSpeechRejectsNonAudioUpstreamSuccess(t *testing.T) {
 	}
 }
 
+func TestSpeechRejectsNonOKUpstream2xx(t *testing.T) {
+	store := newTestStore(t)
+	up := &fakeUpstream{
+		synthResp: &http.Response{
+			StatusCode: http.StatusAccepted,
+			Header:     http.Header{"Content-Type": []string{"audio/mpeg"}},
+			Body:       io.NopCloser(strings.NewReader("mp3-bytes")),
+		},
+	}
+	app := New(store, up)
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/audio/speech",
+		strings.NewReader(`{"model":"tts-1","input":"hello world"}`),
+	)
+	req.Header.Set("Authorization", "Bearer sk_test")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	app.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Fatalf("expected status 502, got %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestSpeechMapsUpstreamTimeoutToGatewayTimeout(t *testing.T) {
 	store := newTestStore(t)
 	up := &fakeUpstream{synthErr: context.DeadlineExceeded}
@@ -184,6 +211,30 @@ func TestSpeechMapsUpstreamTimeoutToGatewayTimeout(t *testing.T) {
 
 	if rec.Code != http.StatusGatewayTimeout {
 		t.Fatalf("expected status 504, got %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestSpeechRejectsUnknownJSONFields(t *testing.T) {
+	store := newTestStore(t)
+	up := &fakeUpstream{}
+	app := New(store, up)
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/audio/speech",
+		strings.NewReader(`{"model":"tts-1","input":"hello world","speed":1.25}`),
+	)
+	req.Header.Set("Authorization", "Bearer sk_test")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	app.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if up.synthCalled != 0 {
+		t.Fatalf("expected synthesize not to be called, got %d", up.synthCalled)
 	}
 }
 

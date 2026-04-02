@@ -126,7 +126,7 @@ func isTimeoutError(err error) bool {
 func proxyAudio(w http.ResponseWriter, resp *http.Response) {
 	defer resp.Body.Close()
 
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+	if resp.StatusCode != http.StatusOK {
 		writeError(w, http.StatusBadGateway, "upstream_error", "synthesis_failed", "upstream synthesis failed")
 		return
 	}
