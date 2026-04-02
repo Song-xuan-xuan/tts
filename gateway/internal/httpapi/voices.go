@@ -26,7 +26,7 @@ func (a *App) handleVoices(w http.ResponseWriter, r *http.Request) {
 	voices, err := a.upstream.ListVoices(r.Context())
 	if err != nil {
 		_ = cfg
-		writeError(w, http.StatusBadGateway, "upstream_error", "voices_unavailable", "upstream voices unavailable")
+		writeUpstreamError(w, err, "voices_unavailable", "upstream voices unavailable")
 		return
 	}
 

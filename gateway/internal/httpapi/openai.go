@@ -61,7 +61,7 @@ func (a *App) handleSpeech(w http.ResponseWriter, r *http.Request) {
 		ShardLength: token.Defaults.ShardLength,
 	})
 	if err != nil {
-		writeError(w, http.StatusBadGateway, "upstream_error", "synthesis_failed", "upstream synthesis failed")
+		writeUpstreamError(w, err, "synthesis_failed", "upstream synthesis failed")
 		return
 	}
 

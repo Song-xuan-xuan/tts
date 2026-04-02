@@ -2,8 +2,10 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 
@@ -100,6 +102,27 @@ func containsVoice(allowed []string, voice string) bool {
 	return false
 }
 
+func writeUpstreamError(w http.ResponseWriter, err error, code string, message string) {
+	status := http.StatusBadGateway
+	if isTimeoutError(err) {
+		status = http.StatusGatewayTimeout
+	}
+
+	writeError(w, status, "upstream_error", code, message)
+}
+
+func isTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+
+	var netErr net.Error
+	return errors.As(err, &netErr) && netErr.Timeout()
+}
+
 func proxyAudio(w http.ResponseWriter, resp *http.Response) {
 	defer resp.Body.Close()
 
@@ -108,12 +131,17 @@ func proxyAudio(w http.ResponseWriter, resp *http.Response) {
 		return
 	}
 
-	for key, values := range resp.Header {
-		for _, value := range values {
-			w.Header().Add(key, value)
-		}
+	if !isMP3ContentType(resp.Header.Get("Content-Type")) {
+		writeError(w, http.StatusBadGateway, "upstream_error", "invalid_audio_response", "upstream did not return MP3 audio")
+		return
 	}
 
+	w.Header().Set("Content-Type", "audio/mpeg")
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
+}
+
+func isMP3ContentType(contentType string) bool {
+	baseType := strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
+	return baseType == "audio/mpeg" || baseType == "audio/mp3"
 }
