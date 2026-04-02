@@ -238,6 +238,53 @@ func TestSpeechRejectsUnknownJSONFields(t *testing.T) {
 	}
 }
 
+func TestSpeechRejectsMissingContentType(t *testing.T) {
+	store := newTestStore(t)
+	up := &fakeUpstream{}
+	app := New(store, up)
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/audio/speech",
+		strings.NewReader(`{"model":"tts-1","input":"hello world"}`),
+	)
+	req.Header.Set("Authorization", "Bearer sk_test")
+	rec := httptest.NewRecorder()
+
+	app.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if up.synthCalled != 0 {
+		t.Fatalf("expected synthesize not to be called, got %d", up.synthCalled)
+	}
+}
+
+func TestSpeechRejectsNonJSONContentType(t *testing.T) {
+	store := newTestStore(t)
+	up := &fakeUpstream{}
+	app := New(store, up)
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/audio/speech",
+		strings.NewReader(`{"model":"tts-1","input":"hello world"}`),
+	)
+	req.Header.Set("Authorization", "Bearer sk_test")
+	req.Header.Set("Content-Type", "text/plain")
+	rec := httptest.NewRecorder()
+
+	app.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if up.synthCalled != 0 {
+		t.Fatalf("expected synthesize not to be called, got %d", up.synthCalled)
+	}
+}
+
 func TestSpeechRejectsTrailingTopLevelJSONValue(t *testing.T) {
 	store := newTestStore(t)
 	up := &fakeUpstream{}

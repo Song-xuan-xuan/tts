@@ -3,6 +3,7 @@ package httpapi
 import (
 	"encoding/json"
 	"io"
+	"mime"
 	"net/http"
 	"unicode/utf8"
 
@@ -22,6 +23,12 @@ func (a *App) handleSpeech(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeError(w, http.StatusUnauthorized, "authentication_error", "invalid_api_key", "invalid bearer token")
+		return
+	}
+
+	contentType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil || contentType != "application/json" {
+		writeError(w, http.StatusBadRequest, "invalid_request_error", "invalid_content_type", "content-type must be application/json")
 		return
 	}
 
