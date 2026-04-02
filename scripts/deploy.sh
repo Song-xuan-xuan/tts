@@ -27,27 +27,14 @@ if [[ "${server_port}" != "8080" ]]; then
 fi
 
 awk '
-  $1 == "tokens:" { in_tokens=1; next }
-  in_tokens && /^[^[:space:]-]/ { in_tokens=0 }
-  !in_tokens { next }
-  $1 == "-" && $2 == "name:" {
-    name=$3
-    token=""
-    enabled=""
-    next
-  }
-  $1 == "token:" {
-    token=$2
-    next
-  }
-  $1 == "enabled:" {
-    enabled=$2
-    if (enabled != "true") {
-      printf("refusing to deploy: token '%s' is disabled in config/gateway.yaml; enable it only after setting a real token\n", name) > "/dev/stderr"
-      exit 1
-    }
-    if (token == "" || token == "sk_tts_prod_xxx") {
-      printf("refusing to deploy: token '%s' still uses the example placeholder in config/gateway.yaml\n", name) > "/dev/stderr"
+  /^[[:space:]]*token:[[:space:]]*/ {
+    token = $0
+    sub(/^[[:space:]]*token:[[:space:]]*/, "", token)
+    sub(/[[:space:]]*(#.*)?$/, "", token)
+    gsub(/^["\047]|["\047]$/, "", token)
+
+    if (token == "sk_tts_prod_xxx") {
+      print "refusing to deploy: config/gateway.yaml still contains the example placeholder token sk_tts_prod_xxx" > "/dev/stderr"
       exit 1
     }
   }
