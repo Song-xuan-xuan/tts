@@ -26,19 +26,10 @@ if [[ "${server_port}" != "8080" ]]; then
   exit 1
 fi
 
-awk '
-  /^[[:space:]]*-?[[:space:]]*token:[[:space:]]*/ {
-    token = $0
-    sub(/^[[:space:]]*-?[[:space:]]*token:[[:space:]]*/, "", token)
-    sub(/[[:space:]]*(#.*)?$/, "", token)
-    gsub(/^["\047]|["\047]$/, "", token)
-
-    if (token == "sk_tts_prod_xxx") {
-      print "refusing to deploy: config/gateway.yaml still contains the example placeholder token sk_tts_prod_xxx" > "/dev/stderr"
-      exit 1
-    }
-  }
-' "${config_path}"
+if grep -Fq "sk_tts_prod_xxx" "${config_path}"; then
+  echo "refusing to deploy: config/gateway.yaml still contains the example placeholder token sk_tts_prod_xxx" >&2
+  exit 1
+fi
 
 docker compose pull
 docker compose up -d
