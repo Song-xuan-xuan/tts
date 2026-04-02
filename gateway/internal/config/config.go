@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
@@ -10,7 +11,7 @@ import (
 type RuntimeConfig struct {
 	Server   ServerConfig   `yaml:"server"`
 	Upstream UpstreamConfig `yaml:"upstream"`
-	Defaults Defaults       `yaml:"defaults"`
+	Defaults RootDefaults   `yaml:"defaults"`
 	Tokens   []TokenConfig  `yaml:"tokens"`
 }
 
@@ -23,7 +24,13 @@ type UpstreamConfig struct {
 	TimeoutSeconds int    `yaml:"timeout_seconds"`
 }
 
-type Defaults struct {
+type RootDefaults struct {
+	Thread        int    `yaml:"thread"`
+	ShardLength   int    `yaml:"shard_length"`
+	MaxTextLength int    `yaml:"max_text_length"`
+}
+
+type TokenDefaults struct {
 	Voice         string `yaml:"voice"`
 	Thread        int    `yaml:"thread"`
 	ShardLength   int    `yaml:"shard_length"`
@@ -31,11 +38,11 @@ type Defaults struct {
 }
 
 type TokenConfig struct {
-	Name          string   `yaml:"name"`
-	Token         string   `yaml:"token"`
-	Enabled       bool     `yaml:"enabled"`
-	Defaults      Defaults `yaml:"defaults"`
-	AllowedVoices []string `yaml:"allowed_voices"`
+	Name          string        `yaml:"name"`
+	Token         string        `yaml:"token"`
+	Enabled       bool          `yaml:"enabled"`
+	Defaults      TokenDefaults `yaml:"defaults"`
+	AllowedVoices []string      `yaml:"allowed_voices"`
 }
 
 func Load(path string) (*RuntimeConfig, error) {
@@ -45,7 +52,9 @@ func Load(path string) (*RuntimeConfig, error) {
 	}
 
 	var cfg RuntimeConfig
-	if err := yaml.Unmarshal(body, &cfg); err != nil {
+	decoder := yaml.NewDecoder(bytes.NewReader(body))
+	decoder.KnownFields(true)
+	if err := decoder.Decode(&cfg); err != nil {
 		return nil, fmt.Errorf("decode yaml: %w", err)
 	}
 
@@ -107,7 +116,20 @@ func (c *RuntimeConfig) Validate() error {
 		if len(token.AllowedVoices) == 0 {
 			return fmt.Errorf("tokens[%d].allowed_voices must contain at least one item", i)
 		}
+		if !contains(token.AllowedVoices, token.Defaults.Voice) {
+			return fmt.Errorf("tokens[%d].defaults.voice must be included in allowed_voices", i)
+		}
 	}
 
 	return nil
+}
+
+func contains(items []string, want string) bool {
+	for _, item := range items {
+		if item == want {
+			return true
+		}
+	}
+
+	return false
 }

@@ -94,3 +94,72 @@ tokens:
 		t.Fatalf("unexpected default voice %q", cfg.Tokens[0].Defaults.Voice)
 	}
 }
+
+func TestLoadRequiresTokenDefaultVoiceInAllowedVoices(t *testing.T) {
+	path := writeTempConfig(t, `
+server:
+  port: 8080
+upstream:
+  base_url: http://tts:8080
+  timeout_seconds: 90
+defaults:
+  thread: 1
+  shard_length: 400
+  max_text_length: 8000
+tokens:
+  - name: llm-prod
+    token: sk_test
+    enabled: true
+    defaults:
+      voice: zh-CN-YunxiNeural
+      thread: 2
+      shard_length: 300
+      max_text_length: 5000
+    allowed_voices:
+      - zh-CN-XiaoxiaoNeural
+`)
+
+	_, err := Load(path)
+	if err == nil {
+		t.Fatal("expected validation error")
+	}
+
+	if !strings.Contains(err.Error(), "defaults.voice") {
+		t.Fatalf("expected defaults.voice error, got %v", err)
+	}
+}
+
+func TestLoadRejectsUnknownFields(t *testing.T) {
+	path := writeTempConfig(t, `
+server:
+  port: 8080
+upstream:
+  base_url: http://tts:8080
+  timeout_seconds: 90
+defaults:
+  thread: 1
+  shard_length: 400
+  max_text_length: 8000
+  timeout_seconds: 60
+tokens:
+  - name: llm-prod
+    token: sk_test
+    enabled: true
+    defaults:
+      voice: zh-CN-YunxiNeural
+      thread: 2
+      shard_length: 300
+      max_text_length: 5000
+    allowed_voices:
+      - zh-CN-YunxiNeural
+`)
+
+	_, err := Load(path)
+	if err == nil {
+		t.Fatal("expected decode error")
+	}
+
+	if !strings.Contains(err.Error(), "field timeout_seconds not found") {
+		t.Fatalf("expected unknown field error, got %v", err)
+	}
+}
