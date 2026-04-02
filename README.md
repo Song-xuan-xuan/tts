@@ -14,22 +14,25 @@ Self-contained deployment repository for an OpenAI-compatible TTS gateway in fro
 - `GET /api/voices`
 - `GET /healthz`
 
-`POST /v1/audio/speech` requires `Authorization: Bearer <token>` and `Content-Type: application/json`. `GET /api/voices` returns a JSON object with top-level `default_voice` and `voices`.
+`POST /v1/audio/speech` requires `Authorization: Bearer <token>` and `Content-Type: application/json`. `GET /api/voices` also requires `Authorization: Bearer <token>` and returns a JSON object with top-level `default_voice` and `voices`.
 
 ## Quick start
 
 ```bash
 cp .env.example .env
 cp config/gateway.example.yaml config/gateway.yaml
-docker compose up -d
+# edit config/gateway.yaml:
+#   - replace sk_tts_prod_xxx with a real token
+#   - change enabled: false to enabled: true
+./scripts/deploy.sh
 ```
 
-After copying `config/gateway.example.yaml`, replace the placeholder token, set your real token value, and change that token to `enabled: true` before running `scripts/deploy.sh`. New deployments that still contain `sk_tts_prod_xxx` are rejected by `scripts/deploy.sh`.
+After copying `config/gateway.example.yaml`, replace the placeholder token, set your real token value, and change that token to `enabled: true` before running `./scripts/deploy.sh`. New deployments that still contain `sk_tts_prod_xxx` are rejected by the deploy script.
 
-If you want the guarded deploy flow instead of a direct compose start, run:
+If you prefer to inspect the generated Docker Compose model before starting the stack, run:
 
 ```bash
-./scripts/deploy.sh
+docker compose config
 ```
 
 ## NPM Setup
