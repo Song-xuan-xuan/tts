@@ -26,6 +26,7 @@ cp config/gateway.example.yaml config/gateway.yaml
 # edit config/gateway.yaml:
 #   - replace sk_tts_prod_xxx with a real token
 #   - change enabled: false to enabled: true
+# optional: if the config file owner is not uid/gid 1000, update TTS_GATEWAY_UID/GID in .env
 # optional: if NPM runs on another machine, change TTS_GATEWAY_BIND_IP in .env
 ./scripts/deploy.sh
 ```
@@ -41,6 +42,8 @@ docker compose config
 If `docker compose pull` fails with a GHCR permission error, open the GitHub package page for `tts-gateway` under the `Song-xuan-xuan/tts` repository and set the package visibility to `Public`.
 
 By default, `tts-gateway` only binds to `127.0.0.1` for safer same-host deployments with NPM. If your reverse proxy runs on a different machine, set `TTS_GATEWAY_BIND_IP=0.0.0.0` or another reachable private address in `.env` before deployment.
+
+The gateway container runs as `${TTS_GATEWAY_UID}:${TTS_GATEWAY_GID}` so it can read your bind-mounted `config/gateway.yaml` without making the file world-readable. If your config file is owned by a different uid/gid on the host, update those values in `.env` before deployment.
 
 ## NPM Setup
 

@@ -3,6 +3,7 @@ services:
     image: ${TTS_GATEWAY_IMAGE}
     container_name: tts-gateway
     restart: unless-stopped
+    user: "${TTS_GATEWAY_UID:-1000}:${TTS_GATEWAY_GID:-1000}"
     ports:
       - "${TTS_GATEWAY_BIND_IP:-127.0.0.1}:${TTS_GATEWAY_PORT}:8080"
     environment:
