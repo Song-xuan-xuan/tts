@@ -26,6 +26,7 @@ cp config/gateway.example.yaml config/gateway.yaml
 # edit config/gateway.yaml:
 #   - replace sk_tts_prod_xxx with a real token
 #   - change enabled: false to enabled: true
+# optional: if NPM runs on another machine, change TTS_GATEWAY_BIND_IP in .env
 ./scripts/deploy.sh
 ```
 
@@ -39,13 +40,15 @@ docker compose config
 
 If `docker compose pull` fails with a GHCR permission error, open the GitHub package page for `tts-gateway` under the `Song-xuan-xuan/tts` repository and set the package visibility to `Public`.
 
+By default, `tts-gateway` only binds to `127.0.0.1` for safer same-host deployments with NPM. If your reverse proxy runs on a different machine, set `TTS_GATEWAY_BIND_IP=0.0.0.0` or another reachable private address in `.env` before deployment.
+
 ## NPM Setup
 
 This repository does not deploy Nginx Proxy Manager. Configure your existing NPM instance to forward:
 
 - domain: `tts.example.com`
 - scheme: `http`
-- forward host: your server IP or host reachable by NPM
+- forward host: `127.0.0.1` when NPM runs on the same machine, otherwise a host/IP reachable by NPM
 - forward port: `18080` by default, or the value of `TTS_GATEWAY_PORT` in `.env`
 
 Enable SSL and Force SSL in NPM.

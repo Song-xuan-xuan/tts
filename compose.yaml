@@ -4,7 +4,7 @@ services:
     container_name: tts-gateway
     restart: unless-stopped
     ports:
-      - "${TTS_GATEWAY_PORT}:8080"
+      - "${TTS_GATEWAY_BIND_IP:-127.0.0.1}:${TTS_GATEWAY_PORT}:8080"
     environment:
       CONFIG_PATH: /app/config/gateway.yaml
     volumes:
