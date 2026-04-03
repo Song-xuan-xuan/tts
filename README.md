@@ -8,6 +8,8 @@ Self-contained deployment repository for an OpenAI-compatible TTS gateway in fro
 - `mzzsfy/tts`, kept on the internal Docker network as the upstream speech engine
 - Docker Compose packaging, deployment scripts, and config templates for running both services together
 
+The default published gateway image is `ghcr.io/song-xuan-xuan/tts-gateway:latest`.
+
 ## Public endpoints
 
 - `POST /v1/audio/speech`
@@ -34,6 +36,8 @@ If you prefer to inspect the generated Docker Compose model before starting the 
 ```bash
 docker compose config
 ```
+
+If `docker compose pull` fails with a GHCR permission error, open the GitHub package page for `tts-gateway` under the `Song-xuan-xuan/tts` repository and set the package visibility to `Public`.
 
 ## NPM Setup
 
